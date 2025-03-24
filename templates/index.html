@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+</head>
+<body>
+    <h1>To-Do List</h1>
+    <div>
+        <ul style="list-style-type: none; padding: 0;"> <!-- Remove bullet points -->
+            {% for task_id, task, priority in tasks %}
+                <li style="display: flex; align-items: center; margin-bottom: 5px;">
+                    <form action="/complete_task" method="POST" style="margin: 0; display: inline;">
+                        <input type="hidden" name="task_id" value="{{ task_id }}">
+                        <input type="checkbox" onchange="this.form.submit()" style="margin-right: 10px;"> 
+                    </form>
+                    {{ task }} - <strong>{{ priority }}</strong>
+                </li>
+            {% endfor %}
+        </ul>        
+    </div>
+    <h1>Add an Item</h1>
+    <form action="/add_task" method="POST">
+        <label for="task">Task Name:</label><br>
+        <input type="text" id="task" name="task"><br>
+        <label for="priority">Priority:</label><br>
+        <select id="priority" name="priority">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+        </select>
+        <button type="submit">Add Task</button>
+    </form>
+    <form action="/delete_all_tasks" method="POST">
+        <button type="submit">Delete All Tasks</button>
+    </form>
+</body>
+</html>
