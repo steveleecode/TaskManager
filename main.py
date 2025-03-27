@@ -8,10 +8,7 @@ import hashlib
 
 app = Flask(__name__)
 
-SESSION_TYPE = 'redis'
-SESSION_REDIS = Redis(host='localhost', port=6379)
-app.config.from_object(__name__)
-Session(app)
+app.secret_key = hashlib.sha256(''.join(random.choices(string.ascii_letters + string.digits, k=8)).encode()).hexdigest()
 
 length = 8
 random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=length))
@@ -21,14 +18,15 @@ def init_db():
     conn = sqlite3.connect("tasks.db")  # Connect to the SQLite database
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS tasks (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER, 
                         task TEXT,
                         priority TEXT)''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT, 
-                    password TEXT,
-                    email TEXT)''')
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT, 
+                        password TEXT,
+                        email TEXT)''')
     conn.commit()  # Save changes
     conn.close()  # Close database connection
 
@@ -37,7 +35,7 @@ def get_tasks():
     conn = sqlite3.connect("tasks.db")
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT id, task, priority 
+        SELECT id, user_id, task, priority 
         FROM tasks
         ORDER BY 
             CASE 
@@ -67,7 +65,10 @@ def complete_task():
 @app.route("/", methods=["GET"])
 def index():
     tasks = get_tasks()  # Fetch all tasks from the database
+    if not session.get("logged_in"):
+        return redirect("/login")
     return render_template("index.html", tasks=tasks, random_string = random_string)  # Render the HTML page with tasks
+
 
 @app.route("/login", methods=["GET"])
 def login():
@@ -79,8 +80,7 @@ def login_user():
     password = request.form.get("password")
     email = request.form.get("email")
 
-    password_hashed = password
-    #hashlib.sha256(password.encode()).hexdigest()
+    password_hashed = hashlib.sha256(password.encode()).hexdigest()
 
     conn = sqlite3.connect("tasks.db")  # Connect to the database
     cursor = conn.cursor()
@@ -94,6 +94,7 @@ def login_user():
 
     user = output[1]
     password = output[2]
+    user_id = output[0]
     conn.commit()  # Save changes
     conn.close()  # Close connection
 
@@ -103,8 +104,11 @@ def login_user():
         print("User not found")
         return redirect("/login")
     elif password == password_hashed:
-        #session["logged_in"] = True
-        return redirect("/")
+        session["user_id"] = user_id
+        session["logged_in"] = True
+        session["username"] = user
+        tasks = get_tasks()
+        return render_template("index.html", tasks=tasks, random_string = random_string)  # Render the HTML page with tasks
 
 @app.route("/register", methods=["GET"])
 def register():
@@ -114,6 +118,7 @@ def register():
 def register_user():
     username = request.form.get("username")
     password = request.form.get("password")
+    email = request.form.get("email")
 
     password_hashed = hashlib.sha256(password.encode()).hexdigest()
 
@@ -123,7 +128,7 @@ def register_user():
 
     if cursor.fetchone() is not None:
         return redirect("/register")
-    cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password_hashed))
+    cursor.execute("INSERT INTO users (username, password, email) VALUES (?, ?, ?)", (username, password_hashed, email))
     conn.commit()
     conn.close()
     return redirect("/login")
@@ -131,21 +136,20 @@ def register_user():
 # Route to handle task submissions
 @app.route("/add_task", methods=["POST"])
 def add_task_route():
-    task = request.form.get("task")  # Get task input from the form
+    task = request.form.get(f"task-{random_string}")  # Get task input from the form
     priority = request.form.get("priority")
+    user_id = session.get("user_id")
     if task:  # Ensure the task is not empty
-        add_task(task, priority)  # Add task to the database
+        add_task(user_id, task, priority)  # Add task to the database
     else:
         print("ERROR: TASK IS EMPTY")
     return redirect("/")  # Redirect back to homepage after adding the task
 
 # Function to add a task to the database
-def add_task(task, priority):
-    print("Locking in")
-    print(task)
+def add_task(user_id, task, priority):
     conn = sqlite3.connect("tasks.db")  # Connect to the database
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO tasks (task, priority) VALUES (?, ?)", (task, priority))  # Insert task into table
+    cursor.execute("INSERT INTO tasks (user_id, task, priority) VALUES (?, ?, ?)", (user_id, task, priority))  # Insert task into table
     conn.commit()  # Save changes
     conn.close()  # Close connection
 

@@ -6,9 +6,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <title>To-Do List</title>
 </head>
-<body>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 0;">
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="#">Navbar</a>
+        <a class="navbar-brand" href="#">To-Do List</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -21,7 +21,7 @@
             <li class="nav-item">
               <a class="nav-link" href="/login" >Login</a>
             </li>
-            <li class="nav-item dropdown">
+            <!-- <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Dropdown
               </a>
@@ -34,42 +34,44 @@
             </li>
             <li class="nav-item">
               <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
-            </li>
+            </li> -->
           </ul>
-          <form class="form-inline my-2 my-lg-0">
-            <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-          </form>
         </div>
     </nav>
-    <h1>To-Do List</h1>
     <div>
-        <ul style="list-style-type: none; padding: 0;"> <!-- Remove bullet points -->
-            {% for task_id, task, priority in tasks %}
-                <li style="display: flex; align-items: center; margin-bottom: 5px;">
-                    <form action="/complete_task" method="POST" style="margin: 0; display: inline;">
-                        <input type="hidden" name="task_id" value="{{ task_id }}">
-                        <input type="checkbox" onchange="this.form.submit()" style="margin-right: 10px;"> 
-                    </form>
-                    {{ task }} - <strong>{{ priority }}</strong>
-                </li>
-            {% endfor %}
-        </ul>        
+      <h1 sclass="mb-4">Your Tasks</h1>
+      <ul style="list-style-type: none; padding: 0;"> <!-- Remove bullet points -->
+        {% for task_id, user_id, task, priority in tasks %}
+          <li style="display: flex; align-items: center; margin-bottom: 5px;">
+            <form action="/complete_task" method="POST" style="margin: 0; display: inline;">
+              <input type="hidden" id="task_id" name="task_id" value="{{ task_id }}">
+              <input type="checkbox" onchange="this.form.submit()" style="margin-right: 10px;"> 
+            </form>
+            {{ task }} - <strong>{{ priority }}</strong>
+          </li>
+        {% endfor %}
+      </ul>        
     </div>
-    <h1>Add an Item</h1>
-    <form autocomplete="off" action="/add_task" method="POST">
-        <label for="task">Task Name:</label><br>
-        <input type="text" id="task" name="task-{{ random_string }}" ><br>
-        <label for="priority">Priority:</label><br>
-        <select id="priority" name="priority">
+    <div class="container mt-4">
+      <h1 class="mb-4">Add an Item</h1>
+      <form autocomplete="off" action="/add_task" method="POST" class="mb-3">
+        <div class="form-group">
+          <label for="task">Task Name:</label>
+          <input type="text" id="task" name="task-{{ random_string }}" class="form-control" placeholder="Enter task name">
+        </div>
+        <div class="form-group">
+          <label for="priority">Priority:</label>
+          <select id="priority" name="priority" class="form-control">
             <option value="Low">Low</option>
             <option value="Medium">Medium</option>
             <option value="High">High</option>
-        </select>
-        <button type="submit">Add Task</button>
-    </form>
-    <form action="/delete_all_tasks" method="POST">
-        <button type="submit">Delete All Tasks</button>
-    </form>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Task</button>
+      </form>
+      <form action="/delete_all_tasks" method="POST">
+        <button type="submit" class="btn btn-danger">Delete All Tasks</button>
+      </form>
+    </div>
 </body>
 </html>
